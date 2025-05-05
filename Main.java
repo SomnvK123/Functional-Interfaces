@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.function.*;
+import java.util.stream.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -32,17 +32,45 @@ public class Main {
 
     // 3 sp doanh thu cao nhat
     public static void getTop3ProductsByRevenue(List<Order> orders) {
-        Map<Product, Double> product = orders.stream().flatMap(order -> order.getItems().stream())
-                .collect(Collectors.groupingBy(OrderItem::getProduct,
-                        Collectors.summingDouble(OrderItem::getTotal)));
+        // Map<Product, Double> product = orders.stream().flatMap(order ->
+        // order.getItems().stream())
+        // .collect(Collectors.groupingBy(OrderItem::getProduct,
+        // Collectors.summingDouble(OrderItem::getTotal)));
+
+        // System.out.println("Top 3 products with the highest revenue:");
+        // product.entrySet().stream().sorted(Map.Entry.<Product,
+        // Double>comparingByValue().reversed()).limit(3)
+        // .forEach(e -> {
+        // Product p = e.getKey();
+        // double revenue = e.getValue();
+        // System.out.printf("Product: %s, Revenue: %.2f\n", p.getProductName(),
+        // revenue);
+        // });
+
+        Function<Order, Stream<OrderItem>> getItems = order -> order.getItems().stream(); // Lấy danh sách sản phẩm
+                                                                                          // trong đơn hàng
+        Function<OrderItem, Product> getProduct = OrderItem::getProduct; // Lấy sản phẩm từ OrderItem
+        ToDoubleFunction<OrderItem> getTotal = OrderItem::getTotal; // Lấy tổng giá trị của sản phẩm
+
+        Comparator<Map.Entry<Product, Double>> comparator = Map.Entry.<Product, Double>comparingByValue().reversed(); // So
+                                                                                                                      // sánh
+                                                                                                                      // doanh
+                                                                                                                      // thu
+        Consumer<Map.Entry<Product, Double>> printProduct = e -> { // In thông tin sản phẩm
+            Product p = e.getKey();
+            double revenue = e.getValue();
+            System.out.printf("Product: %s, Revenue: %.2f\n", p.getProductName(), revenue);
+        };
 
         System.out.println("Top 3 products with the highest revenue:");
-        product.entrySet().stream().sorted(Map.Entry.<Product, Double>comparingByValue().reversed()).limit(3)
-                .forEach(e -> {
-                    Product p = e.getKey();
-                    double revenue = e.getValue();
-                    System.out.printf("Product: %s, Revenue: %.2f\n", p.getProductName(), revenue);
-                });
+        orders.stream()
+                .flatMap(getItems) // Lấy danh sách sản phẩm từ tất cả đơn hàng
+                .collect(Collectors.groupingBy(getProduct, Collectors.summingDouble(getTotal))) // Nhóm theo sản phẩm và
+                                                                                                // tính tổng doanh thu
+                .entrySet().stream() // Chuyển đổi thành Stream<Map.Entry<Product, Double>>
+                .sorted(comparator) // Sắp xếp theo doanh thu giảm dần
+                .limit(3)
+                .forEach(printProduct);
     }
 
     // Tính tổng doanh thu theo từng khách hàng
