@@ -75,43 +75,97 @@ public class Main {
 
     // Tính tổng doanh thu theo từng khách hàng
     public static void getTotalRevenueByCustomer(List<Order> orders) {
-        Map<Customer, Double> customer = orders.stream().collect(Collectors.groupingBy(Order::getCustomer,
-                Collectors.summingDouble(o -> o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+        // Map<Customer, Double> customer =
+        // orders.stream().collect(Collectors.groupingBy(Order::getCustomer,
+        // Collectors.summingDouble(o ->
+        // o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+
+        // System.out.println("Total revenue by customer:");
+        // customer.forEach((c, revenue) -> {
+        // System.out.printf("Customer: %s, Revenue: %.2f\n", c.getName(), revenue);
+        // });
+
+        Function<Order, Customer> getCustomer = Order::getCustomer; // Lấy khách hàng từ đơn hàng
+        ToDoubleFunction<Order> getTotal = order -> order.getItems().stream().mapToDouble(OrderItem::getTotal).sum();
+        Consumer<Map.Entry<Customer, Double>> printCustomer = e -> {
+            Customer c = e.getKey();
+            double revenue = e.getValue();
+            System.out.printf("Customer: %s, Revenue: %.2f\n", c.getName(), revenue);
+        };
 
         System.out.println("Total revenue by customer:");
-        customer.forEach((c, revenue) -> {
-            System.out.printf("Customer: %s, Revenue: %.2f\n", c.getName(), revenue);
-        });
+        orders.stream()
+                .collect(Collectors.groupingBy(getCustomer, Collectors.summingDouble(getTotal)))
+                .entrySet().stream()
+                .forEach(printCustomer);
     }
 
     // Tìm đơn hàng có giá trị lớn nhất của mỗi khách hàng
     public static void getMaxOrderPerCustomer(List<Order> orders) {
-        Map<Customer, Order> order = orders.stream().collect(
-                Collectors.groupingBy(
-                        Order::getCustomer,
-                        Collectors.collectingAndThen(
-                                Collectors.maxBy(Comparator.comparingDouble(
-                                        o -> o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())),
-                                Optional::get)));
+        // Map<Customer, Order> order = orders.stream().collect(
+        // Collectors.groupingBy(
+        // Order::getCustomer,
+        // Collectors.collectingAndThen(
+        // Collectors.maxBy(Comparator.comparingDouble(
+        // o -> o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())),
+        // Optional::get)));
+
+        // System.out.println("Max order per customer:");
+        // order.forEach((c, o) -> {
+        // System.out.printf("Customer: %s, Order Product: %s, Total: %.2f\n",
+        // c.getName(),
+        // o.getItems().get(0).getProduct().getProductName(),
+        // o.getItems().stream().mapToDouble(OrderItem::getTotal).sum());
+        // });
+
+        Function<Order, Customer> getCustomer = Order::getCustomer; // Lấy khách hàng từ đơn hàng
+        ToDoubleFunction<Order> getTotal = order -> order.getItems().stream().mapToDouble(OrderItem::getTotal).sum();
+        Comparator<Order> comparator = Comparator.comparingDouble(getTotal).reversed();
+        Consumer<Map.Entry<Customer, Optional<Order>>> printOrder = e -> {
+            Customer c = e.getKey();
+            Optional<Order> o = e.getValue();
+            if (o.isPresent()) {
+                Order order = o.get();
+                double total = getTotal.applyAsDouble(order);
+                System.out.printf("Customer: %s, Order Product: %s, Total: %.2f\n", c.getName(),
+                        order.getItems().get(0).getProduct().getProductName(), total);
+            } else {
+                System.out.printf("Customer: %s, No orders found.\n", c.getName());
+            }
+        };
 
         System.out.println("Max order per customer:");
-        order.forEach((c, o) -> {
-            System.out.printf("Customer: %s, Order Product: %s, Total: %.2f\n", c.getName(),
-                    o.getItems().get(0).getProduct().getProductName(),
-                    o.getItems().stream().mapToDouble(OrderItem::getTotal).sum());
-        });
+        orders.stream()
+                .collect(Collectors.groupingBy(getCustomer, Collectors.maxBy(comparator)))
+                .entrySet().stream()
+                .forEach(printOrder);
     }
 
     // Phân loại đơn hàng theo tháng và tính tổng doanh thu mỗi tháng
     public static void getTotalRevenueByMonth(List<Order> orders) {
-        Map<YearMonth, Double> order = orders.stream()
-                .collect(Collectors.groupingBy(o -> YearMonth.from(o.getOrderDate()),
-                        Collectors.summingDouble(o -> o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+        // Map<YearMonth, Double> order = orders.stream()
+        // .collect(Collectors.groupingBy(o -> YearMonth.from(o.getOrderDate()),
+        // Collectors.summingDouble(o ->
+        // o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+
+        // System.out.println("Total revenue by month:");
+        // order.forEach((m, revenue) -> {
+        // System.out.printf("Month: %s, Revenue: %.2f\n", m, revenue);
+        // });
+
+        Function<Order, YearMonth> getMonth = order -> YearMonth.from(order.getOrderDate()); // Lấy tháng từ đơn hàng
+        ToDoubleFunction<Order> getTotal = order -> order.getItems().stream().mapToDouble(OrderItem::getTotal).sum();
+        Consumer<Map.Entry<YearMonth, Double>> printMonth = e -> {
+            YearMonth m = e.getKey();
+            double revenue = e.getValue();
+            System.out.printf("Month: %s, Revenue: %.2f\n", m, revenue);
+        };
 
         System.out.println("Total revenue by month:");
-        order.forEach((m, revenue) -> {
-            System.out.printf("Month: %s, Revenue: %.2f\n", m, revenue);
-        });
+        orders.stream()
+                .collect(Collectors.groupingBy(getMonth, Collectors.summingDouble(getTotal)))
+                .entrySet().stream()
+                .forEach(printMonth);
     }
 
     // Tìm khách hàng chi tiêu nhiều nhất trong một khoảng thời gian
