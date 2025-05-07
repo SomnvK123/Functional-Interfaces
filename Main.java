@@ -26,7 +26,7 @@ public class Main {
         System.out.println("==============================================\n");
         getMaxCustomerInTime(orders,
                 Date.from(LocalDate.of(2023, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()),
-                Date.from(LocalDate.of(2023, 8, 30).atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                Date.from(LocalDate.of(2023, 10, 30).atStartOfDay(ZoneId.systemDefault()).toInstant()));
         System.out.println("==============================================\n");
     }
 
@@ -52,10 +52,7 @@ public class Main {
         Function<OrderItem, Product> getProduct = OrderItem::getProduct; // Lấy sản phẩm từ OrderItem
         ToDoubleFunction<OrderItem> getTotal = OrderItem::getTotal; // Lấy tổng giá trị của sản phẩm
 
-        Comparator<Map.Entry<Product, Double>> comparator = Map.Entry.<Product, Double>comparingByValue().reversed(); // So
-                                                                                                                      // sánh
-                                                                                                                      // doanh
-                                                                                                                      // thu
+        Comparator<Map.Entry<Product, Double>> comparator = Map.Entry.<Product, Double>comparingByValue().reversed();
         Consumer<Map.Entry<Product, Double>> printProduct = e -> { // In thông tin sản phẩm
             Product p = e.getKey();
             double revenue = e.getValue();
@@ -176,20 +173,37 @@ public class Main {
                     !orderDate.isAfter(endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
         };
 
-        Map<Customer, Double> customerSpending = orders.stream()
+        // Map<Customer, Double> customerSpending = orders.stream()
+        // .filter(date)
+        // .collect(Collectors.groupingBy(Order::getCustomer,
+        // Collectors.summingDouble(o ->
+        // o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+        Function<Order, Customer> getCustomers = Order::getCustomer; // Lấy khách hàng từ đơn hàng
+        ToDoubleFunction<Order> getTotal = order -> order.getItems().stream().mapToDouble(OrderItem::getTotal).sum();
+        Comparator<Map.Entry<Customer, Double>> comparator = Map.Entry.<Customer, Double>comparingByValue();
+
+        System.out.println("Max customer in time:");
+        orders.stream()
                 .filter(date)
-                .collect(Collectors.groupingBy(Order::getCustomer,
-                        Collectors.summingDouble(o -> o.getItems().stream().mapToDouble(OrderItem::getTotal).sum())));
+                .collect(Collectors.groupingBy(getCustomers,
+                        Collectors.summingDouble(getTotal)))
+                .entrySet().stream()
+                .max(comparator)
+                .ifPresent(e -> System.out.printf("Customer: %s, Total Spending: %.2f\n",
+                        e.getKey().getName(),
+                        e.getValue()));
 
-        Optional<Map.Entry<Customer, Double>> maxCustomer = customerSpending.entrySet().stream()
-                .max(Map.Entry.comparingByValue());
+        // Optional<Map.Entry<Customer, Double>> maxCustomer =
+        // customerSpending.entrySet().stream()
+        // .max(Map.Entry.comparingByValue());
 
-        if (maxCustomer.isPresent()) {
-            Map.Entry<Customer, Double> entry = maxCustomer.get();
-            System.out.printf("Customer: %s, Total Spending: %.2f\n", entry.getKey().getName(), entry.getValue());
-        } else {
-            System.out.println("No customers found in the given time range.");
-        }
+        // if (maxCustomer.isPresent()) {
+        // Map.Entry<Customer, Double> entry = maxCustomer.get();
+        // System.out.printf("Customer: %s, Total Spending: %.2f\n",
+        // entry.getKey().getName(), entry.getValue());
+        // } else {
+        // System.out.println("No customers found in the given time range.");
+        // }
     }
 
     // In danh sách đơn hàng de xem cho de
